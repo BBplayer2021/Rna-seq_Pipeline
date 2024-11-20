@@ -1,0 +1,34 @@
+# STAR比对
+rule star_align:
+    input:
+        reads=f"{RESULTS_DIR}/trimmed/{{sample}}_R1_trimmed.fastq.gz"
+    output:
+        bam=f"{RESULTS_DIR}/aligned/{{sample}}.Aligned.sortedByCoord.out.bam",
+        log=f"{RESULTS_DIR}/aligned/{{sample}}.Log.final.out"
+    params:
+        index=config["ref"]["star_index"],
+        outprefix=f"{RESULTS_DIR}/aligned/{{sample}}.",
+        **config["star_params"]
+    log:
+        "logs/star/{sample}.log"
+    threads: 8
+    shell:
+        """
+        STAR --runThreadN {threads} \
+            --genomeDir {params.index} \
+            --readFilesIn {input.reads} \
+            --readFilesCommand zcat \
+            --outFileNamePrefix {params.outprefix} \
+            --outSAMtype BAM SortedByCoordinate \
+            --sjdbOverhang {params.sjdbOverhang} \
+            --outFilterMismatchNmax {params.outFilterMismatchNmax} \
+            --outFilterMismatchNoverReadLmax {params.outFilterMismatchNoverReadLmax} \
+            --outFilterMultimapNmax {params.outFilterMultimapNmax} \
+            --alignSJoverhangMin {params.alignSJoverhangMin} \
+            --alignSJDBoverhangMin {params.alignSJDBoverhangMin} \
+            --outFilterType {params.outFilterType} \
+            --alignIntronMin {params.alignIntronMin} \
+            --alignIntronMax {params.alignIntronMax} \
+            --alignMatesGapMax {params.alignMatesGapMax} \
+            2> {log}
+        """ 

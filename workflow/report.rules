@@ -1,0 +1,19 @@
+# MultiQC报告
+rule multiqc:
+    input:
+        fastqc=expand(f"{RESULTS_DIR}/fastqc/{{sample}}_fastqc.zip", sample=SAMPLES),
+        star=expand(f"{RESULTS_DIR}/aligned/{{sample}}.Log.final.out", sample=SAMPLES),
+        counts=expand(f"{RESULTS_DIR}/counts/{{sample}}_counts.txt", sample=SAMPLES)
+    output:
+        report=f"{RESULTS_DIR}/multiqc/multiqc_report.html"
+    params:
+        outdir=f"{RESULTS_DIR}/multiqc"
+    log:
+        "logs/multiqc/multiqc.log"
+    shell:
+        """
+        multiqc {RESULTS_DIR} \
+            --force \
+            -o {params.outdir} \
+            2> {log}
+        """ 

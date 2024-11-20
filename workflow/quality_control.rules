@@ -1,0 +1,87 @@
+import pandas as pd
+
+# FastQC质控
+rule fastqc:
+    input:
+        unpack(get_fastq)
+    output:
+        html=f"{RESULTS_DIR}/fastqc/{{sample}}_fastqc.html",
+        zip=f"{RESULTS_DIR}/fastqc/{{sample}}_fastqc.zip"
+    params:
+        outdir=f"{RESULTS_DIR}/fastqc"
+    log:
+        "logs/fastqc/{sample}.log"
+    threads: 2
+    run:
+        input_files = [input.r1]
+        if is_paired_end(wildcards.sample):
+            input_files.append(input.r2)
+        
+        shell(
+            """
+            mkdir -p {params.outdir}
+            fastqc {' '.join(input_files)} \
+                --outdir {params.outdir} \
+                --threads {threads} \
+                2> {log}
+            """
+        )
+
+# Trimmomatic质控 - 双端测序
+rule trimmomatic_pe:
+    input:
+        unpack(get_fastq)
+    output:
+        r1=f"{RESULTS_DIR}/trimmed/{{sample}}_R1_trimmed.fastq.gz",
+        r2=f"{RESULTS_DIR}/trimmed/{{sample}}_R2_trimmed.fastq.gz",
+        r1_unpaired=temp(f"{RESULTS_DIR}/trimmed/{{sample}}_R1_unpaired.fastq.gz"),
+        r2_unpaired=temp(f"{RESULTS_DIR}/trimmed/{{sample}}_R2_unpaired.fastq.gz")
+    params:
+        quality=config["qc_params"]["trim_quality"],
+        minlen=config["qc_params"]["min_length"],
+        adapter1=config["qc_params"]["pe_adapter1"],
+        adapter2=config["qc_params"]["pe_adapter2"]
+    log:
+        "logs/trimmomatic/{sample}.log"
+    threads: 4
+    conda: "envs/trimmomatic.yaml"
+    shell:
+        """
+        trimmomatic PE -threads {threads} \
+            {input.r1} {input.r2} \
+            {output.r1} {output.r1_unpaired} \
+            {output.r2} {output.r2_unpaired} \
+            ILLUMINACLIP:{params.adapter1}:{params.adapter2}:2:30:10 \
+            LEADING:{params.quality} \
+            TRAILING:{params.quality} \
+            SLIDINGWINDOW:4:{params.quality} \
+            MINLEN:{params.minlen} \
+            2> {log}
+        """
+
+# Trimmomatic质控 - 单端测序
+rule trimmomatic_se:
+    input:
+        r1=lambda wildcards: get_fastq(wildcards)["r1"]
+    output:
+        r1=f"{RESULTS_DIR}/trimmed/{{sample}}_trimmed.fastq.gz"
+    params:
+        quality=config["qc_params"]["trim_quality"],
+        minlen=config["qc_params"]["min_length"],
+        adapter=config["qc_params"]["se_adapter"]
+    log:
+        "logs/trimmomatic/{sample}.log"
+    threads: 4
+    conda: "envs/trimmomatic.yaml"
+    shell:
+        """
+        trimmomatic SE -threads {threads} \
+            {input.r1} \
+            {output.r1} \
+            ILLUMINACLIP:{params.adapter}:2:30:10 \
+            LEADING:{params.quality} \
+            TRAILING:{params.quality} \
+            SLIDINGWINDOW:4:{params.quality} \
+            MINLEN:{params.minlen} \
+            2> {log}
+        """ 

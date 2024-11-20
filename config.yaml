@@ -1,0 +1,56 @@
+# 基本设置
+project_name: "rna_seq_project"
+workdir: "."
+
+# 样本元数据文件
+metadata: "metadata.tsv"
+
+# 文件命名模式
+naming_pattern:
+    paired_end:
+        r1: "{sample}_R1"  # 双端测序R1命名模式
+        r2: "{sample}_R2"  # 双端测序R2命名模式
+    single_end:
+        r1: "{sample}"     # 单端测序命名模式
+
+# 参考基因组和注释
+ref:
+    star_index: "/path/to/star/index"
+    gtf: "/path/to/annotation.gtf"
+    genome_fasta: "/path/to/genome.fa"
+
+# 文件设置
+file_params:
+    fastq_ext: ".fastq.gz"
+    results_dir: "results"
+    
+# 质控参数
+qc_params:
+    trim_quality: 20
+    min_length: 36
+    adapter: "AGATCGGAAGAG"
+    # 双端测序特定参数
+    pe_adapter1: "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
+    pe_adapter2: "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+    # 单端测序特定参数
+    se_adapter: "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
+
+# STAR参数
+star_params:
+    sjdbOverhang: 100
+    outFilterMismatchNmax: 999
+    outFilterMismatchNoverReadLmax: 0.04
+    outFilterMultimapNmax: 20
+    alignSJoverhangMin: 8
+    alignSJDBoverhangMin: 1
+    outFilterType: "BySJout"
+    alignIntronMin: 20
+    alignIntronMax: 1000000
+    alignMatesGapMax: 1000000
+
+# featureCounts参数
+featurecounts_params:
+    feature_type: "exon"
+    attribute_type: "gene_id"
+    strand_specific: 0  # 0=unstranded, 1=stranded, 2=reversely stranded
+    min_overlap: 1

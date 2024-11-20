@@ -1,0 +1,31 @@
+# featureCounts计数
+rule featurecounts:
+    input:
+        bam=f"{RESULTS_DIR}/aligned/{{sample}}.Aligned.sortedByCoord.out.bam"
+    output:
+        counts=f"{RESULTS_DIR}/counts/{{sample}}_counts.txt"
+    params:
+        gtf=config["ref"]["gtf"],
+        feature_type=config["featurecounts_params"]["feature_type"],
+        attribute_type=config["featurecounts_params"]["attribute_type"],
+        strand=config["featurecounts_params"]["strand_specific"],
+        min_overlap=config["featurecounts_params"]["min_overlap"]
+    log:
+        "logs/featurecounts/{sample}.log"
+    threads: 4
+    run:
+        paired_end = "-p" if config["samples"][wildcards.sample]["type"] == "paired" else ""
+        shell(
+            """
+            featureCounts -T {threads} \
+                -a {params.gtf} \
+                -o {output.counts} \
+                -t {params.feature_type} \
+                -g {params.attribute_type} \
+                -s {params.strand} \
+                --minOverlap {params.min_overlap} \
+                {paired_end} \
+                {input.bam} \
+                2> {log}
+            """
+        ) 
